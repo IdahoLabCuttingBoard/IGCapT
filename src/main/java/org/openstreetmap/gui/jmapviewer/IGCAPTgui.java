@@ -488,7 +488,7 @@ public class IGCAPTgui extends JFrame implements JMapViewerEventListener, DropTa
         helpPanel.add(helpLabel);
         JComboBox<TileSource> tileSourceSelector = new JComboBox<>(new TileSource[]{
             new OsmTileSource.Mapnik(),
-            new OsmTileSource.CycleMap(),
+            new OsmTileSource.TransportMap(),
             new BingAerialTileSource(),});
         tileSourceSelector.addItemListener(new ItemListener() {
             @Override

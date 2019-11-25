@@ -1,6 +1,8 @@
 // License: GPL. For details, see Readme.txt file.
 package org.openstreetmap.gui.jmapviewer;
 
+import static org.openstreetmap.gui.jmapviewer.FeatureAdapter.tr;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.openstreetmap.gui.jmapviewer.interfaces.TileJob;
 import org.openstreetmap.gui.jmapviewer.interfaces.TileLoader;
@@ -22,7 +26,22 @@ import org.openstreetmap.gui.jmapviewer.interfaces.TileLoaderListener;
  * @author Jan Peter Stotz
  */
 public class OsmTileLoader implements TileLoader {
-    private static final ThreadPoolExecutor jobDispatcher = (ThreadPoolExecutor) Executors.newFixedThreadPool(3);
+
+    private static final Logger LOG = FeatureAdapter.getLogger(OsmTileLoader.class);
+
+    /** Setting key for number of threads */
+    public static final String THREADS_SETTING = "jmapviewer.osm-tile-loader.threads";
+    private static final int DEFAULT_THREADS_NUMBER = 8;
+    private static int nThreads = DEFAULT_THREADS_NUMBER;
+    static {
+        try {
+            nThreads = FeatureAdapter.getIntSetting(THREADS_SETTING, DEFAULT_THREADS_NUMBER);
+        } catch (Exception e) {
+            LOG.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
+    private static final ThreadPoolExecutor jobDispatcher = (ThreadPoolExecutor) Executors.newFixedThreadPool(nThreads);
 
     private final class OsmTileJob implements TileJob {
         private final Tile tile;
@@ -49,7 +68,7 @@ public class OsmTileLoader implements TileLoader {
                 }
                 loadTileMetadata(tile, conn);
                 if ("no-tile".equals(tile.getValue("tile-info"))) {
-                    tile.setError("No tile at this zoom level");
+                    tile.setError(tr("No tiles at this zoom level"));
                 } else {
                     input = conn.getInputStream();
                     try {
@@ -66,21 +85,16 @@ public class OsmTileLoader implements TileLoader {
                 listener.tileLoadingFinished(tile, false);
                 if (input == null) {
                     try {
-                        System.err.println("Failed loading " + tile.getUrl() +": "
+                        LOG.log(Level.SEVERE, "Failed loading " + tile.getUrl() +": "
                                 +e.getClass() + ": " + e.getMessage());
                     } catch (IOException ioe) {
-                        ioe.printStackTrace();
+                        LOG.log(Level.SEVERE, ioe.getMessage(), ioe);
                     }
                 }
             } finally {
                 tile.loading = false;
                 tile.setLoaded(true);
             }
-        }
-
-        @Override
-        public Tile getTile() {
-            return tile;
         }
 
         @Override
@@ -105,6 +119,10 @@ public class OsmTileLoader implements TileLoader {
 
     protected TileLoaderListener listener;
 
+    /**
+     * Constructs a new {@code OsmTileLoader}.
+     * @param listener tile loader listener
+     */
     public OsmTileLoader(TileLoaderListener listener) {
         this(listener, null);
     }
@@ -126,7 +144,6 @@ public class OsmTileLoader implements TileLoader {
     protected URLConnection loadTileFromOsm(Tile tile) throws IOException {
         URL url;
         url = new URL(tile.getUrl());
-        //System.out.println("URL = " + tile.getUrl()); // KD
         URLConnection urlConn = url.openConnection();
         if (urlConn instanceof HttpURLConnection) {
             prepareHttpUrlConnection((HttpURLConnection) urlConn);
@@ -181,6 +198,11 @@ public class OsmTileLoader implements TileLoader {
     @Override
     public String toString() {
         return getClass().getSimpleName();
+    }
+
+    @Override
+    public boolean hasOutstandingTasks() {
+        return jobDispatcher.getTaskCount() > jobDispatcher.getCompletedTaskCount();
     }
 
     @Override

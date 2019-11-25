@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.openstreetmap.gui.jmapviewer.JMapViewer;
 import org.openstreetmap.gui.jmapviewer.OsmMercator;
 import org.openstreetmap.gui.jmapviewer.Tile;
 import org.openstreetmap.gui.jmapviewer.TileXY;
@@ -30,6 +31,7 @@ public abstract class AbstractTMSTileSource extends AbstractTileSource {
     private final Map<String, Set<String>> noTileHeaders;
     private final Map<String, Set<String>> noTileChecksums;
     private final Map<String, String> metadataHeaders;
+    protected boolean modTileFeatures;
     protected int tileSize;
 
     /**
@@ -47,6 +49,7 @@ public abstract class AbstractTMSTileSource extends AbstractTileSource {
         this.noTileHeaders = info.getNoTileHeaders();
         this.noTileChecksums = info.getNoTileChecksums();
         this.metadataHeaders = info.getMetadataHeaders();
+        this.modTileFeatures = info.isModTileFeatures();
         this.tileSize = info.getTileSize();
     }
 
@@ -70,12 +73,12 @@ public abstract class AbstractTMSTileSource extends AbstractTileSource {
 
     @Override
     public int getMaxZoom() {
-        return 21;
+        return JMapViewer.MAX_ZOOM;
     }
 
     @Override
     public int getMinZoom() {
-        return 0;
+        return JMapViewer.MIN_ZOOM;
     }
 
     /**
@@ -233,6 +236,11 @@ public abstract class AbstractTMSTileSource extends AbstractTileSource {
     @Override
     public String getTileId(int zoom, int tilex, int tiley) {
         return this.baseUrl + "/" + zoom + "/" + tilex + "/" + tiley;
+    }
+
+    @Override
+    public boolean isModTileFeatures() {
+        return modTileFeatures;
     }
 
     private static int getTileMax(int zoom) {

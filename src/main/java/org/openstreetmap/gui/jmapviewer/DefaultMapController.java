@@ -16,7 +16,6 @@ import java.util.Locale;
  * @author Jan Peter Stotz
  *
  */
-
 public class DefaultMapController extends JMapController implements MouseListener, MouseMotionListener,
 MouseWheelListener {
 
@@ -88,7 +87,7 @@ MouseWheelListener {
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
         if (wheelZoomEnabled) {
-            int rotation = JMapViewer.zoomReverseWheel ? e.getWheelRotation() : -e.getWheelRotation();
+            int rotation = JMapViewer.zoomReverseWheel ? -e.getWheelRotation() : e.getWheelRotation();
             map.setZoom(map.getZoom() - rotation, e.getPoint());
         }
     }

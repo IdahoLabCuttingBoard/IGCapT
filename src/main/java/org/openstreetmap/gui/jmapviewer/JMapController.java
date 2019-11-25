@@ -17,7 +17,6 @@ import java.awt.event.MouseWheelListener;
  *
  * @author Jan Peter Stotz
  */
-
 public abstract class JMapController {
 
     protected JMapViewer map;
